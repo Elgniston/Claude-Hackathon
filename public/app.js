@@ -6,13 +6,13 @@ const loginSection = document.getElementById('login-section');
 const appSection = document.getElementById('app-section');
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
-const searchBtn = document.getElementById('search-btn');
+const generateBtn = document.getElementById('generate-btn');
 const createPlaylistBtn = document.getElementById('create-playlist-btn');
 const createAnotherBtn = document.getElementById('create-another-btn');
-const minBpmInput = document.getElementById('min-bpm');
-const maxBpmInput = document.getElementById('max-bpm');
+const userPromptInput = document.getElementById('user-prompt');
 const playlistNameInput = document.getElementById('playlist-name');
 const loadingDiv = document.getElementById('loading');
+const loadingMessage = document.getElementById('loading-message');
 const resultsSection = document.getElementById('results-section');
 const successSection = document.getElementById('success-section');
 const tracksList = document.getElementById('tracks-list');
@@ -26,9 +26,16 @@ loginBtn.addEventListener('click', () => {
 });
 
 logoutBtn.addEventListener('click', logout);
-searchBtn.addEventListener('click', searchTracks);
+generateBtn.addEventListener('click', generatePlaylist);
 createPlaylistBtn.addEventListener('click', createPlaylist);
 createAnotherBtn.addEventListener('click', resetToSearch);
+
+// Allow Enter key in textarea (with Ctrl+Enter to submit)
+userPromptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+        generatePlaylist();
+    }
+});
 
 // Check for access token in URL hash
 window.addEventListener('load', () => {
@@ -68,53 +75,80 @@ function logout() {
     successSection.classList.add('hidden');
 }
 
-async function searchTracks() {
-    const minBpm = parseInt(minBpmInput.value);
-    const maxBpm = parseInt(maxBpmInput.value);
+async function generatePlaylist() {
+    const userPrompt = userPromptInput.value.trim();
 
-    if (minBpm >= maxBpm) {
-        alert('Minimum BPM must be less than Maximum BPM');
-        return;
-    }
-
-    if (minBpm < 60 || maxBpm > 200) {
-        alert('BPM must be between 60 and 200');
+    if (!userPrompt) {
+        alert('Please describe the kind of playlist you want!');
         return;
     }
 
     loadingDiv.classList.remove('hidden');
     resultsSection.classList.add('hidden');
     successSection.classList.add('hidden');
+    loadingMessage.textContent = 'Understanding your request...';
 
     try {
-        const response = await fetch('/api/search-by-bpm', {
+        // Step 1: Send prompt to Claude AI to parse
+        loadingMessage.textContent = 'Analyzing your request with AI...';
+        const parseResponse = await fetch('/api/parse-prompt', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                minBpm,
-                maxBpm,
-                limit: 50,
+                prompt: userPrompt,
                 accessToken
             })
         });
 
-        const data = await response.json();
-        foundTracks = data.tracks;
+        const parseData = await parseResponse.json();
+
+        if (parseData.error) {
+            throw new Error(parseData.error);
+        }
+
+        console.log('AI parsed:', parseData);
+
+        // Step 2: Search for tracks based on AI-parsed criteria
+        loadingMessage.textContent = 'Finding the perfect tracks...';
+        const searchResponse = await fetch('/api/search-by-criteria', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                criteria: parseData.criteria,
+                limit: 10,
+                accessToken
+            })
+        });
+
+        const searchData = await searchResponse.json();
+
+        if (searchData.error) {
+            throw new Error(searchData.error);
+        }
+
+        foundTracks = searchData.tracks;
 
         loadingDiv.classList.add('hidden');
 
         if (foundTracks.length === 0) {
-            alert('No tracks found in this BPM range. Try a different range!');
+            alert('No tracks found matching your description. Try describing it differently!');
             return;
+        }
+
+        // Auto-suggest playlist name from AI
+        if (parseData.suggestedName) {
+            playlistNameInput.value = parseData.suggestedName;
         }
 
         displayTracks(foundTracks);
     } catch (error) {
-        console.error('Error searching tracks:', error);
+        console.error('Error generating playlist:', error);
         loadingDiv.classList.add('hidden');
-        alert('Error searching for tracks. Please try again.');
+        alert('Error: ' + error.message + '. Please try again.');
     }
 }
 
@@ -155,6 +189,7 @@ async function createPlaylist() {
     }
 
     loadingDiv.classList.remove('hidden');
+    loadingMessage.textContent = 'Creating your playlist...';
     resultsSection.classList.add('hidden');
 
     try {
@@ -193,5 +228,6 @@ function resetToSearch() {
     successSection.classList.add('hidden');
     resultsSection.classList.add('hidden');
     foundTracks = [];
-    playlistNameInput.value = 'My BPM Playlist';
+    userPromptInput.value = '';
+    playlistNameInput.value = '';
 }

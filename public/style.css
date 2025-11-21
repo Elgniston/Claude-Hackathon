@@ -24,10 +24,12 @@ header {
     padding: 40px 20px;
 }
 
-header h1 {
-    font-size: 3em;
+header h1.logo {
+    font-size: 3.5em;
     margin-bottom: 10px;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    font-weight: 700;
+    letter-spacing: -1px;
 }
 
 .subtitle {
@@ -107,6 +109,34 @@ header h1 {
     margin-bottom: 30px;
     padding-bottom: 20px;
     border-bottom: 2px solid #f0f0f0;
+}
+
+.prompt-section {
+    margin-bottom: 30px;
+}
+
+.prompt-section h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 1.8em;
+}
+
+.prompt-section textarea {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 15px;
+    font-size: 1.1em;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.prompt-section textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .bpm-input-section {
