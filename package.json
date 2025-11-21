@@ -1,0 +1,23 @@
+{
+  "name": "spotify-bpm-playlist-generator",
+  "version": "1.0.0",
+  "description": "Create Spotify playlists based on BPM (beats per minute)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "keywords": ["spotify", "bpm", "playlist", "music"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
